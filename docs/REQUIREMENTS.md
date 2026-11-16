@@ -20,8 +20,8 @@ Status: ✅ done · 🚧 in progress · ⬜ not started
 |---|---|---|---|---|
 | E1 | `POST /products` creates product(s) | ✅ | `product/ProductController` | `ProductApiIT` |
 | E2 | `POST /promotions` creates promotion(s) | ✅ | `promotion/PromotionController` | `PromotionApiIT` |
-| E3 | `POST /cart/quote` accepts `items[{productId, qty}]` and `customerSegment` | ⬜ | | |
-| E4 | Quote returns per-line and total breakdown, and applied promotions in order | ⬜ | | |
+| E3 | `POST /cart/quote` accepts `items[{productId, qty}]` and `customerSegment` | ✅ | `cart/CartController`, `cart/CartRequest` | `CartQuoteApiIT`, `CartRequestTest` |
+| E4 | Quote returns per-line and total breakdown, and applied promotions in order | ✅ | `cart/QuoteResponse` | `CartQuoteApiIT` |
 | E5 | `POST /cart/confirm` accepts the quote payload plus optional `Idempotency-Key` header | ⬜ | | |
 | E6 | Confirm validates stock and reserves it atomically | ⬜ | | |
 | E7 | Confirm returns the final price and a generated `orderId` | ⬜ | | |
@@ -50,7 +50,7 @@ Status: ✅ done · 🚧 in progress · ⬜ not started
 
 | # | Requirement | Status | Implementation | Tests |
 |---|---|---|---|---|
-| V1 | Input validated with Bean Validation | 🚧 | `CreateProductRequest`, `CreatePromotionRequest`, `@Percentage` | `ProductApiIT`, `PromotionApiIT` |
+| V1 | Input validated with Bean Validation | ✅ | `CreateProductRequest`, `CreatePromotionRequest`, `@Percentage`, `CartRequest` | `ProductApiIT`, `PromotionApiIT`, `CartQuoteApiIT` |
 | V2 | Structured error responses | ✅ | `common/error/GlobalExceptionHandler` (RFC 7807 + `code` + `errors`) | `ProductApiIT` |
 | V3 | Prices never go negative | ✅ | `LineItem.applyDiscount` caps each discount at the line total | `PricingContextTest`, `PricingEngineTest` |
 | V4 | Correct rounding (HALF_UP to cents) | ✅ | `pricing/Money` | `MoneyTest`, rule tests |
