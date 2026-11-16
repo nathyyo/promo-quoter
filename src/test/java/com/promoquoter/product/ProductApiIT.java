@@ -11,9 +11,11 @@ import java.util.UUID;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -41,10 +43,11 @@ class ProductApiIT extends IntegrationTest {
 
     @Test
     void acceptsASingleProductObject() throws Exception {
-        postJson("/products", product("Book", "books", "12.50", 3))
+        postJson("/products", product("Book", "books", "12", 3))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].name").value("Book"));
+                .andExpect(jsonPath("$[0].name").value("Book"))
+                .andExpect(content().string(containsString("\"price\":12.00")));
     }
 
     @Test
