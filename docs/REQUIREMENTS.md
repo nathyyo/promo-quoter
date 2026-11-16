@@ -9,9 +9,9 @@ Status: ✅ done · 🚧 in progress · ⬜ not started
 | # | Requirement | Status | Implementation | Tests |
 |---|---|---|---|---|
 | D1 | Product: id, name, category, price (decimal), stock (int) | ✅ | `product/Product` | `ProductTest`, `ProductApiIT` |
-| D2 | Promotion type `PERCENT_OFF_CATEGORY` | ⬜ | | |
-| D3 | Promotion type `BUY_X_GET_Y` for a given product | ⬜ | | |
-| D4 | Additional promotion type (optional) | ⬜ | | |
+| D2 | Promotion type `PERCENT_OFF_CATEGORY` | 🚧 | `promotion/PercentOffCategoryPromotion` (definition) | `PromotionApiIT` |
+| D3 | Promotion type `BUY_X_GET_Y` for a given product | 🚧 | `promotion/BuyXGetYPromotion` (definition) | `PromotionApiIT` |
+| D4 | Additional promotion type (optional) | 🚧 | `TIERED_BULK_DISCOUNT`: `promotion/TieredBulkDiscountPromotion` (definition) | `PromotionApiIT` |
 | D5 | Data stored in H2 / in-memory DB | ✅ | `application.yml` | `PromoQuoterApplicationIT` |
 
 ## Endpoints
@@ -19,7 +19,7 @@ Status: ✅ done · 🚧 in progress · ⬜ not started
 | # | Requirement | Status | Implementation | Tests |
 |---|---|---|---|---|
 | E1 | `POST /products` creates product(s) | ✅ | `product/ProductController` | `ProductApiIT` |
-| E2 | `POST /promotions` creates promotion(s) | ⬜ | | |
+| E2 | `POST /promotions` creates promotion(s) | ✅ | `promotion/PromotionController` | `PromotionApiIT` |
 | E3 | `POST /cart/quote` accepts `items[{productId, qty}]` and `customerSegment` | ⬜ | | |
 | E4 | Quote returns per-line and total breakdown, and applied promotions in order | ⬜ | | |
 | E5 | `POST /cart/confirm` accepts the quote payload plus optional `Idempotency-Key` header | ⬜ | | |
@@ -50,7 +50,7 @@ Status: ✅ done · 🚧 in progress · ⬜ not started
 
 | # | Requirement | Status | Implementation | Tests |
 |---|---|---|---|---|
-| V1 | Input validated with Bean Validation | 🚧 | `CreateProductRequest` | `ProductApiIT` |
+| V1 | Input validated with Bean Validation | 🚧 | `CreateProductRequest`, `CreatePromotionRequest`, `@Percentage` | `ProductApiIT`, `PromotionApiIT` |
 | V2 | Structured error responses | ✅ | `common/error/GlobalExceptionHandler` (RFC 7807 + `code` + `errors`) | `ProductApiIT` |
 | V3 | Prices never go negative | ⬜ | | |
 | V4 | Correct rounding (HALF_UP to cents) | ⬜ | | |

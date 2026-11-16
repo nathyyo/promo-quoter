@@ -122,14 +122,17 @@ class ProductApiIT extends IntegrationTest {
     @Test
     void rejectsUnknownFields() throws Exception {
         postJson("/products", "{\"name\":\"Pen\",\"category\":\"office\",\"price\":1,\"stock\":1,\"colour\":\"red\"}")
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("MALFORMED_REQUEST"))
+                .andExpect(jsonPath("$.detail").value("Unknown property 'colour' at '[0].colour'."));
     }
 
     @Test
     void rejectsMalformedJson() throws Exception {
         postJson("/products", "{not json")
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(400));
+                .andExpect(jsonPath("$.code").value("MALFORMED_REQUEST"))
+                .andExpect(jsonPath("$.detail").value("Request body is not valid JSON."));
     }
 
     static Map<String, Object> product(String name, String category, String price, int stock) {
