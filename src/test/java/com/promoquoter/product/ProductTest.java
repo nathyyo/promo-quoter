@@ -19,6 +19,11 @@ class ProductTest {
     }
 
     @Test
+    void storesPricesWithTwoDecimals() {
+        assertThat(new Product("Pen", "office", new BigDecimal("2"), 1).getPrice()).hasToString("2.00");
+    }
+
+    @Test
     void normalizeCategoryIsCaseInsensitive() {
         assertThat(Product.normalizeCategory("Books")).isEqualTo(Product.normalizeCategory("BOOKS"));
     }

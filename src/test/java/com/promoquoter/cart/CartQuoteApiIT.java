@@ -192,6 +192,24 @@ class CartQuoteApiIT extends IntegrationTest {
                 .andExpect(jsonPath("$.detail").value(containsString("customerSegment")));
     }
 
+    @Test
+    void explainsValuesOfTheWrongType() throws Exception {
+        postJson("/cart/quote", "{\"items\":[{\"productId\":\"%s\",\"qty\":\"three\"}]}".formatted(novel.getId()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("Invalid value 'three' at 'items[0].qty'."));
+        postJson("/cart/quote", "{\"items\":\"not-a-list\"}")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("Unexpected value at 'items[0]'."));
+    }
+
+    @Test
+    void rejectsAMissingBody() throws Exception {
+        postJson("/cart/quote", "")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("MALFORMED_REQUEST"))
+                .andExpect(jsonPath("$.detail").value("Request body is missing or unreadable."));
+    }
+
     static Map<String, Object> cart(Map<UUID, Integer> quantities, String segment) {
         List<Map<String, Object>> items = quantities.entrySet().stream()
                 .map(e -> Map.<String, Object>of("productId", e.getKey(), "qty", e.getValue()))

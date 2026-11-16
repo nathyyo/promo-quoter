@@ -7,6 +7,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
@@ -41,7 +42,8 @@ public class Product {
         this.id = UUID.randomUUID();
         this.name = Objects.requireNonNull(name, "name").trim();
         this.category = normalizeCategory(category);
-        this.price = Objects.requireNonNull(price, "price");
+        // Stored and returned with exactly two decimals; requests are validated to have at most two.
+        this.price = Objects.requireNonNull(price, "price").setScale(2, RoundingMode.HALF_UP);
         this.stock = stock;
     }
 
