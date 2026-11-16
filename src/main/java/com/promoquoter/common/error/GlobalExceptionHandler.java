@@ -9,6 +9,8 @@ import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSourceResolvable;
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -48,6 +50,21 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(ex.getStatus(), ex.getMessage());
         problem.setTitle(ex.getTitle());
         problem.setProperty("code", ex.getCode());
+        ex.getProperties().forEach(problem::setProperty);
+        return problem;
+    }
+
+    /**
+     * A row lock could not be obtained in time, or an optimistic version check failed because another
+     * request changed the same data. Retrying the request is safe.
+     */
+    @ExceptionHandler({PessimisticLockingFailureException.class, OptimisticLockingFailureException.class})
+    ProblemDetail handleConcurrencyFailure(Exception ex) {
+        log.warn("Concurrent update conflict: {}", ex.getMessage());
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+                "The data was changed by another request. Please retry.");
+        problem.setTitle("Concurrent update");
+        problem.setProperty("code", "CONCURRENT_UPDATE");
         return problem;
     }
 

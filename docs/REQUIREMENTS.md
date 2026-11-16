@@ -22,9 +22,9 @@ Status: ✅ done · 🚧 in progress · ⬜ not started
 | E2 | `POST /promotions` creates promotion(s) | ✅ | `promotion/PromotionController` | `PromotionApiIT` |
 | E3 | `POST /cart/quote` accepts `items[{productId, qty}]` and `customerSegment` | ✅ | `cart/CartController`, `cart/CartRequest` | `CartQuoteApiIT`, `CartRequestTest` |
 | E4 | Quote returns per-line and total breakdown, and applied promotions in order | ✅ | `cart/QuoteResponse` | `CartQuoteApiIT` |
-| E5 | `POST /cart/confirm` accepts the quote payload plus optional `Idempotency-Key` header | ⬜ | | |
-| E6 | Confirm validates stock and reserves it atomically | ⬜ | | |
-| E7 | Confirm returns the final price and a generated `orderId` | ⬜ | | |
+| E5 | `POST /cart/confirm` accepts the quote payload plus optional `Idempotency-Key` header | 🚧 | `cart/CartController` (payload done; header next) | `CartConfirmApiIT` |
+| E6 | Confirm validates stock and reserves it atomically | ✅ | `CartService.confirm`: one transaction; all lines checked before any is reserved | `CartConfirmApiIT` |
+| E7 | Confirm returns the final price and a generated `orderId` | ✅ | `cart/ConfirmResponse`, `order/Order` | `CartConfirmApiIT` |
 
 ## Rules engine
 
@@ -42,8 +42,8 @@ Status: ✅ done · 🚧 in progress · ⬜ not started
 
 | # | Requirement | Status | Implementation | Tests |
 |---|---|---|---|---|
-| C1 | Confirm is safe under concurrent calls (optimistic or row-level pessimistic locking) | ⬜ | | |
-| C2 | Out of stock returns `409 CONFLICT` with a clear error | ⬜ | | |
+| C1 | Confirm is safe under concurrent calls (optimistic or row-level pessimistic locking) | ✅ | `ProductRepository.findAllByIdForUpdate` (`PESSIMISTIC_WRITE`, id order) + `@Version` | `CartConfirmConcurrencyIT` |
+| C2 | Out of stock returns `409 CONFLICT` with a clear error | ✅ | `cart/OutOfStockException` (`OUT_OF_STOCK` + `shortages`) | `CartConfirmApiIT`, `CartConfirmConcurrencyIT` |
 | C3 | Repeated confirm with the same `Idempotency-Key` does not reserve twice | ⬜ | | |
 
 ## Validation and errors
