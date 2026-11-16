@@ -52,6 +52,25 @@ public class Product {
         return Objects.requireNonNull(category, "category").trim().toUpperCase(Locale.ROOT);
     }
 
+    public boolean hasStock(int quantity) {
+        return quantity <= stock;
+    }
+
+    /**
+     * Takes {@code quantity} units out of stock. Callers must hold a lock on this row.
+     *
+     * @throws IllegalStateException if there is not enough stock; callers check {@link #hasStock} first
+     */
+    public void reserve(int quantity) {
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("quantity must be positive");
+        }
+        if (!hasStock(quantity)) {
+            throw new IllegalStateException("Cannot reserve " + quantity + " of product " + id + "; only " + stock + " left");
+        }
+        stock -= quantity;
+    }
+
     public UUID getId() {
         return id;
     }

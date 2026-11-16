@@ -1,9 +1,11 @@
 package com.promoquoter.cart;
 
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -19,5 +21,11 @@ public class CartController {
     @PostMapping("/quote")
     public QuoteResponse quote(@RequestBody @Valid CartRequest cart) {
         return service.quote(cart);
+    }
+
+    @PostMapping("/confirm")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ConfirmResponse confirm(@RequestBody @Valid CartRequest cart) {
+        return service.confirm(cart);
     }
 }

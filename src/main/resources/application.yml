@@ -2,7 +2,8 @@ spring:
   application:
     name: promo-quoter
   datasource:
-    url: jdbc:h2:mem:promoquoter;DB_CLOSE_DELAY=-1
+    # LOCK_TIMEOUT: how long a transaction waits for a row lock (ms) before failing with 409.
+    url: jdbc:h2:mem:promoquoter;DB_CLOSE_DELAY=-1;LOCK_TIMEOUT=5000
     username: sa
     password:
   jpa:

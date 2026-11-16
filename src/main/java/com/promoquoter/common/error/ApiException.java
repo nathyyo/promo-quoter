@@ -2,6 +2,8 @@ package com.promoquoter.common.error;
 
 import org.springframework.http.HttpStatus;
 
+import java.util.Map;
+
 /**
  * Base class for business errors that map to a specific HTTP status and a stable, machine-readable code.
  */
@@ -28,5 +30,10 @@ public abstract class ApiException extends RuntimeException {
 
     public String getTitle() {
         return title;
+    }
+
+    /** Extra members added to the problem response body. */
+    public Map<String, Object> getProperties() {
+        return Map.of();
     }
 }
