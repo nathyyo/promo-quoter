@@ -23,6 +23,7 @@ import org.springframework.validation.method.ParameterValidationResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
@@ -102,10 +103,10 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                     violations.add(new FieldViolation(join(prefix, error.getField()), error.getDefaultMessage()));
                 }
                 errors.getGlobalErrors()
-                        .forEach(error -> violations.add(new FieldViolation(prefix, error.getDefaultMessage())));
+                        .forEach(error -> violations.add(new FieldViolation(orBody(prefix), error.getDefaultMessage())));
             } else {
                 for (MessageSourceResolvable error : result.getResolvableErrors()) {
-                    violations.add(new FieldViolation(prefix, error.getDefaultMessage()));
+                    violations.add(new FieldViolation(orBody(prefix), error.getDefaultMessage()));
                 }
             }
         }
@@ -165,16 +166,30 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     private static String parameterPath(ParameterValidationResult result) {
-        String base = result.getMethodParameter().hasParameterAnnotation(RequestBody.class)
-                ? ""
-                : result.getMethodParameter().getParameterName();
+        RequestHeader header = result.getMethodParameter().getParameterAnnotation(RequestHeader.class);
+        String base;
+        if (result.getMethodParameter().hasParameterAnnotation(RequestBody.class)) {
+            base = "";
+        } else if (header != null && !header.name().isEmpty()) {
+            base = header.name();
+        } else {
+            base = result.getMethodParameter().getParameterName();
+        }
+        if (base == null) {
+            base = "";
+        }
         if (result.getContainerIndex() != null) {
-            return (base == null ? "" : base) + "[" + result.getContainerIndex() + "]";
+            return base + "[" + result.getContainerIndex() + "]";
         }
         if (result.getContainerKey() != null) {
-            return (base == null ? "" : base) + "[" + result.getContainerKey() + "]";
+            return base + "[" + result.getContainerKey() + "]";
         }
-        return base == null || base.isEmpty() ? "body" : base;
+        return base;
+    }
+
+    /** Errors about the request body as a whole are reported against {@code body}. */
+    private static String orBody(String path) {
+        return path.isEmpty() ? "body" : path;
     }
 
     private static String join(String prefix, String field) {

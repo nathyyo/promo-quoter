@@ -6,9 +6,14 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.UUID;
 
 /**
@@ -25,6 +30,22 @@ public record CartRequest(
     public CartRequest {
         if (customerSegment == null) {
             customerSegment = CustomerSegment.REGULAR;
+        }
+    }
+
+    /**
+     * SHA-256 of the segment and the combined quantity per product. Carts that list the same items
+     * in a different order, or split a product over several lines, have the same fingerprint.
+     */
+    public String fingerprint() {
+        StringBuilder canonical = new StringBuilder(customerSegment.name());
+        new TreeMap<>(quantitiesByProduct())
+                .forEach((productId, qty) -> canonical.append('|').append(productId).append(':').append(qty));
+        try {
+            byte[] hash = MessageDigest.getInstance("SHA-256").digest(canonical.toString().getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hash);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 is not available", e);
         }
     }
 
