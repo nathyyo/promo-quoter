@@ -1,5 +1,6 @@
 package com.promoquoter.cart;
 
+import com.jayway.jsonpath.JsonPath;
 import com.promoquoter.order.OrderRepository;
 import com.promoquoter.product.Product;
 import com.promoquoter.product.ProductRepository;
@@ -90,9 +91,32 @@ class CartConfirmConcurrencyIT {
         assertThat(products.findById(second.getId()).orElseThrow().getStock()).isEqualTo(100 - THREADS);
     }
 
+    @Test
+    void concurrentRetriesWithTheSameKeyPlaceOneOrder() throws Exception {
+        Product product = products.save(new Product("Headphones", "electronics", new BigDecimal("99.00"), 10));
+        String body = cartJson(Map.of(product, 2));
+
+        List<ResponseEntity<String>> responses = runConcurrently(10, () -> confirm(body, "checkout-42"));
+
+        assertThat(responses).allSatisfy(r -> assertThat(r.getStatusCode()).isEqualTo(HttpStatus.CREATED));
+        assertThat(responses).extracting(r -> JsonPath.<String>read(r.getBody(), "$.orderId")).containsOnly(
+                JsonPath.<String>read(responses.getFirst().getBody(), "$.orderId"));
+        assertThat(responses).filteredOn(r -> "false".equals(r.getHeaders().getFirst("Idempotent-Replayed")))
+                .hasSize(1);
+        assertThat(products.findById(product.getId()).orElseThrow().getStock()).isEqualTo(8);
+        assertThat(orders.count()).isEqualTo(1);
+    }
+
     private ResponseEntity<String> confirm(String body) {
+        return confirm(body, null);
+    }
+
+    private ResponseEntity<String> confirm(String body, String idempotencyKey) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
+        if (idempotencyKey != null) {
+            headers.set("Idempotency-Key", idempotencyKey);
+        }
         return http.postForEntity("/cart/confirm", new HttpEntity<>(body, headers), String.class);
     }
 
