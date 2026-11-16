@@ -8,7 +8,7 @@ Status: ✅ done · 🚧 in progress · ⬜ not started
 
 | # | Requirement | Status | Implementation | Tests |
 |---|---|---|---|---|
-| D1 | Product: id, name, category, price (decimal), stock (int) | ⬜ | | |
+| D1 | Product: id, name, category, price (decimal), stock (int) | ✅ | `product/Product` | `ProductTest`, `ProductApiIT` |
 | D2 | Promotion type `PERCENT_OFF_CATEGORY` | ⬜ | | |
 | D3 | Promotion type `BUY_X_GET_Y` for a given product | ⬜ | | |
 | D4 | Additional promotion type (optional) | ⬜ | | |
@@ -18,7 +18,7 @@ Status: ✅ done · 🚧 in progress · ⬜ not started
 
 | # | Requirement | Status | Implementation | Tests |
 |---|---|---|---|---|
-| E1 | `POST /products` creates product(s) | ⬜ | | |
+| E1 | `POST /products` creates product(s) | ✅ | `product/ProductController` | `ProductApiIT` |
 | E2 | `POST /promotions` creates promotion(s) | ⬜ | | |
 | E3 | `POST /cart/quote` accepts `items[{productId, qty}]` and `customerSegment` | ⬜ | | |
 | E4 | Quote returns per-line and total breakdown, and applied promotions in order | ⬜ | | |
@@ -50,8 +50,8 @@ Status: ✅ done · 🚧 in progress · ⬜ not started
 
 | # | Requirement | Status | Implementation | Tests |
 |---|---|---|---|---|
-| V1 | Input validated with Bean Validation | ⬜ | | |
-| V2 | Structured error responses | ⬜ | | |
+| V1 | Input validated with Bean Validation | 🚧 | `CreateProductRequest` | `ProductApiIT` |
+| V2 | Structured error responses | ✅ | `common/error/GlobalExceptionHandler` (RFC 7807 + `code` + `errors`) | `ProductApiIT` |
 | V3 | Prices never go negative | ⬜ | | |
 | V4 | Correct rounding (HALF_UP to cents) | ⬜ | | |
 

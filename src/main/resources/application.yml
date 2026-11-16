@@ -16,6 +16,11 @@ spring:
   mvc:
     problemdetails:
       enabled: true
+  jackson:
+    deserialization:
+      # Lets batch endpoints accept a single object as well as an array.
+      accept-single-value-as-array: true
+      fail-on-unknown-properties: true
 
 server:
   error:
