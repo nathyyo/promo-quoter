@@ -1,5 +1,11 @@
 package com.promoquoter.common.error;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.fasterxml.jackson.databind.exc.InvalidTypeIdException;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSourceResolvable;
@@ -8,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.method.ParameterErrors;
 import org.springframework.validation.method.ParameterValidationResult;
@@ -20,8 +27,10 @@ import org.springframework.web.method.annotation.HandlerMethodValidationExceptio
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Turns every error into an RFC 7807 {@link ProblemDetail}. Each body carries a stable {@code code}
@@ -84,6 +93,47 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             }
         }
         return validationProblem(violations, headers, request, ex);
+    }
+
+    /** Malformed JSON, unknown properties, wrong value types or an unknown polymorphic {@code type}. */
+    @Override
+    protected ResponseEntity<Object> handleHttpMessageNotReadable(
+            HttpMessageNotReadableException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, describe(ex.getCause()));
+        problem.setTitle("Malformed request");
+        problem.setProperty("code", "MALFORMED_REQUEST");
+        return handleExceptionInternal(ex, problem, headers, HttpStatus.BAD_REQUEST, request);
+    }
+
+    private static String describe(Throwable cause) {
+        return switch (cause) {
+            case InvalidTypeIdException e -> e.getTypeId() == null
+                    ? "Missing 'type' property" + at(e) + "."
+                    : "Unknown type '" + e.getTypeId() + "'" + at(e) + ".";
+            case UnrecognizedPropertyException e -> "Unknown property '" + e.getPropertyName() + "'" + at(e) + ".";
+            case InvalidFormatException e -> "Invalid value '" + e.getValue() + "'" + at(e) + allowedValues(e) + ".";
+            case MismatchedInputException e -> "Unexpected value" + at(e) + ".";
+            case JsonProcessingException e -> "Request body is not valid JSON.";
+            case null, default -> "Request body is missing or unreadable.";
+        };
+    }
+
+    private static String at(JsonMappingException e) {
+        String path = e.getPath().stream()
+                .map(ref -> ref.getFieldName() != null ? "." + ref.getFieldName() : "[" + ref.getIndex() + "]")
+                .collect(Collectors.joining());
+        if (path.startsWith(".")) {
+            path = path.substring(1);
+        }
+        return path.isEmpty() ? "" : " at '" + path + "'";
+    }
+
+    private static String allowedValues(InvalidFormatException e) {
+        Class<?> target = e.getTargetType();
+        if (target != null && target.isEnum()) {
+            return "; expected one of " + Arrays.toString(target.getEnumConstants());
+        }
+        return "";
     }
 
     private ResponseEntity<Object> validationProblem(
