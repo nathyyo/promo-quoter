@@ -9,9 +9,9 @@ Status: ✅ done · 🚧 in progress · ⬜ not started
 | # | Requirement | Status | Implementation | Tests |
 |---|---|---|---|---|
 | D1 | Product: id, name, category, price (decimal), stock (int) | ✅ | `product/Product` | `ProductTest`, `ProductApiIT` |
-| D2 | Promotion type `PERCENT_OFF_CATEGORY` | 🚧 | `promotion/PercentOffCategoryPromotion` (definition) | `PromotionApiIT` |
-| D3 | Promotion type `BUY_X_GET_Y` for a given product | 🚧 | `promotion/BuyXGetYPromotion` (definition) | `PromotionApiIT` |
-| D4 | Additional promotion type (optional) | 🚧 | `TIERED_BULK_DISCOUNT`: `promotion/TieredBulkDiscountPromotion` (definition) | `PromotionApiIT` |
+| D2 | Promotion type `PERCENT_OFF_CATEGORY` | ✅ | `PercentOffCategoryPromotion`, `pricing/rules/PercentOffCategoryRule` | `PromotionApiIT`, `PercentOffCategoryRuleTest` |
+| D3 | Promotion type `BUY_X_GET_Y` for a given product | ✅ | `BuyXGetYPromotion`, `pricing/rules/BuyXGetYRule` | `PromotionApiIT`, `BuyXGetYRuleTest` |
+| D4 | Additional promotion type (optional) | ✅ | `TIERED_BULK_DISCOUNT`: `TieredBulkDiscountPromotion`, `pricing/rules/TieredBulkDiscountRule` | `PromotionApiIT`, `TieredBulkDiscountRuleTest` |
 | D5 | Data stored in H2 / in-memory DB | ✅ | `application.yml` | `PromoQuoterApplicationIT` |
 
 ## Endpoints
@@ -30,13 +30,13 @@ Status: ✅ done · 🚧 in progress · ⬜ not started
 
 | # | Requirement | Status | Implementation | Tests |
 |---|---|---|---|---|
-| R1 | Promotions are pluggable and composable | ⬜ | | |
-| R2 | Promotions apply in a defined order (category discount before BxGy) | ⬜ | | |
-| R3 | Rules can be added, swapped or removed without touching orchestration code | ⬜ | | |
-| R4 | Strategy pattern: each rule encapsulates its algorithm | ⬜ | | |
-| R5 | Chain of Responsibility / Pipeline for ordered application | ⬜ | | |
-| R6 | Factory: rules instantiated from persisted promotion definitions (optional) | ⬜ | | |
-| R7 | Decorator: calculation context enriched with an audit trail (optional) | ⬜ | | |
+| R1 | Promotions are pluggable and composable | ✅ | `PromotionRule` + `PromotionRuleProvider` beans; rules compose on a shared `PricingContext` | `PromotionPipelineTest`, `PricingEngineTest` |
+| R2 | Promotions apply in a defined order (category discount before BxGy) | ✅ | `RulePriority`: category (100) → volume (200) → free items (300); creation order breaks ties | `PromotionPipelineTest`, `PricingEngineTest` |
+| R3 | Rules can be added, swapped or removed without touching orchestration code | ✅ | New type = definition + rule + provider bean; `PromotionPipeline` and `PricingEngine` unchanged | `PromotionPipelineTest.acceptsNewRuleTypesWithoutChanges`, `PromoQuoterApplicationIT` |
+| R4 | Strategy pattern: each rule encapsulates its algorithm | ✅ | `pricing/PromotionRule`, `pricing/rules/*` | rule unit tests |
+| R5 | Chain of Responsibility / Pipeline for ordered application | ✅ | `pricing/PromotionPipeline` | `PromotionPipelineTest` |
+| R6 | Factory: rules instantiated from persisted promotion definitions (optional) | ✅ | `pricing/PromotionRuleFactory` | `PromotionRuleFactoryTest` |
+| R7 | Decorator: calculation context enriched with an audit trail (optional) | ✅ | `pricing/AuditingPromotionRule` → `AuditEntry` | `AuditingPromotionRuleTest` |
 
 ## Concurrency and consistency
 
@@ -52,8 +52,8 @@ Status: ✅ done · 🚧 in progress · ⬜ not started
 |---|---|---|---|---|
 | V1 | Input validated with Bean Validation | 🚧 | `CreateProductRequest`, `CreatePromotionRequest`, `@Percentage` | `ProductApiIT`, `PromotionApiIT` |
 | V2 | Structured error responses | ✅ | `common/error/GlobalExceptionHandler` (RFC 7807 + `code` + `errors`) | `ProductApiIT` |
-| V3 | Prices never go negative | ⬜ | | |
-| V4 | Correct rounding (HALF_UP to cents) | ⬜ | | |
+| V3 | Prices never go negative | ✅ | `LineItem.applyDiscount` caps each discount at the line total | `PricingContextTest`, `PricingEngineTest` |
+| V4 | Correct rounding (HALF_UP to cents) | ✅ | `pricing/Money` | `MoneyTest`, rule tests |
 
 ## Non-functional
 
