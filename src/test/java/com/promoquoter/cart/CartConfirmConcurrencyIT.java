@@ -100,7 +100,7 @@ class CartConfirmConcurrencyIT {
 
         assertThat(responses).allSatisfy(r -> assertThat(r.getStatusCode()).isEqualTo(HttpStatus.CREATED));
         assertThat(responses).extracting(r -> JsonPath.<String>read(r.getBody(), "$.orderId")).containsOnly(
-                JsonPath.<String>read(responses.getFirst().getBody(), "$.orderId"));
+                JsonPath.<String>read(responses.get(0).getBody(), "$.orderId"));
         assertThat(responses).filteredOn(r -> "false".equals(r.getHeaders().getFirst("Idempotent-Replayed")))
                 .hasSize(1);
         assertThat(products.findById(product.getId()).orElseThrow().getStock()).isEqualTo(8);

@@ -68,7 +68,7 @@ class PricingEngineTest {
     void itemisesDiscountsPerLine() {
         Promotion electronics = new PercentOffCategoryPromotion("Electronics 10%", Set.of(), "electronics", BigDecimal.TEN);
 
-        PricedLine line = engine.price(List.of(laptop), CustomerSegment.REGULAR, List.of(electronics)).lines().getFirst();
+        PricedLine line = engine.price(List.of(laptop), CustomerSegment.REGULAR, List.of(electronics)).lines().get(0);
 
         assertThat(line.productId()).isEqualTo(laptop.productId());
         assertThat(line.unitPrice()).isEqualTo(money("1000.00"));

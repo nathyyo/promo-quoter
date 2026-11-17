@@ -1,0 +1,608 @@
+{
+  "info": {
+    "name": "PromoQuoter",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Run the requests in order (or use Run collection). Restart the app to reset the in-memory data."
+  },
+  "item": [
+    {
+      "name": "1. Create products",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"201 Created\", () => pm.response.to.have.status(201));",
+              "const p = pm.response.json();",
+              "pm.collectionVariables.set(\"laptopId\", p[0].id);",
+              "pm.collectionVariables.set(\"mouseId\", p[1].id);",
+              "pm.collectionVariables.set(\"novelId\", p[2].id);",
+              "pm.test(\"category is normalised to upper case\", () => pm.expect(p[0].category).to.eql(\"ELECTRONICS\"));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/products",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "products"
+          ]
+        },
+        "description": "Creates 3 products and saves their ids into collection variables for the next requests.",
+        "body": {
+          "mode": "raw",
+          "raw": "[\n  {\n    \"name\": \"Laptop\",\n    \"category\": \"electronics\",\n    \"price\": 1000.0,\n    \"stock\": 10\n  },\n  {\n    \"name\": \"Mouse\",\n    \"category\": \"electronics\",\n    \"price\": 25.0,\n    \"stock\": 100\n  },\n  {\n    \"name\": \"Novel\",\n    \"category\": \"books\",\n    \"price\": 15.99,\n    \"stock\": 5\n  }\n]",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "2. Get laptop",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+              "pm.test(\"stock is 10\", () => pm.expect(pm.response.json().stock).to.eql(10));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/products/{{laptopId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "products",
+            "{{laptopId}}"
+          ]
+        },
+        "description": ""
+      }
+    },
+    {
+      "name": "3. Create promotions",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"201 Created\", () => pm.response.to.have.status(201));",
+              "pm.test(\"4 promotions\", () => pm.expect(pm.response.json().length).to.eql(4));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/promotions",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "promotions"
+          ]
+        },
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "[\n  {\"type\": \"PERCENT_OFF_CATEGORY\", \"name\": \"Electronics 10% off\", \"category\": \"electronics\", \"percent\": 10},\n  {\"type\": \"TIERED_BULK_DISCOUNT\", \"name\": \"Mouse bulk discount\", \"productId\": \"{{mouseId}}\",\n   \"tiers\": [{\"minQuantity\": 10, \"percent\": 5}, {\"minQuantity\": 50, \"percent\": 10}]},\n  {\"type\": \"BUY_X_GET_Y\", \"name\": \"Laptops: buy 2 get 1 free\", \"productId\": \"{{laptopId}}\", \"buyQuantity\": 2, \"freeQuantity\": 1},\n  {\"type\": \"PERCENT_OFF_CATEGORY\", \"name\": \"VIP books 20% off\", \"category\": \"books\", \"percent\": 20, \"customerSegments\": [\"VIP\"]}\n]",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "4. List promotions",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"200 OK\", () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/promotions",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "promotions"
+          ]
+        },
+        "description": ""
+      }
+    },
+    {
+      "name": "5. Quote cart (REGULAR)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+              "const q = pm.response.json();",
+              "pm.test(\"total is 2072.49\", () => pm.expect(q.total).to.eql(2072.49));",
+              "pm.test(\"promotions applied in order: category, bulk, buy-x-get-y\", () =>",
+              "  pm.expect(q.appliedPromotions.map(a => a.type)).to.eql([\"PERCENT_OFF_CATEGORY\",\"TIERED_BULK_DISCOUNT\",\"BUY_X_GET_Y\"]));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/cart/quote",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "cart",
+            "quote"
+          ]
+        },
+        "description": "Expected: subtotal 3315.99, discountTotal 1243.50, total 2072.49. Run requests 1 and 3 only once, or restart the app first, or the totals will differ.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"items\": [\n    {\"productId\": \"{{laptopId}}\", \"qty\": 3},\n    {\"productId\": \"{{mouseId}}\", \"qty\": 12},\n    {\"productId\": \"{{novelId}}\", \"qty\": 1}\n  ],\n  \"customerSegment\": \"REGULAR\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "6. Quote cart (VIP)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"VIP gets 20% off books: total 12.79\", () => pm.expect(pm.response.json().total).to.eql(12.79));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/cart/quote",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "cart",
+            "quote"
+          ]
+        },
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"items\": [{\"productId\": \"{{novelId}}\", \"qty\": 1}],\n  \"customerSegment\": \"VIP\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "7. Confirm order (with Idempotency-Key)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.collectionVariables.set(\"idemKey\", \"checkout-\" + Date.now());"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"201 Created\", () => pm.response.to.have.status(201));",
+              "pm.test(\"not a replay\", () => pm.expect(pm.response.headers.get(\"Idempotent-Replayed\")).to.eql(\"false\"));",
+              "pm.collectionVariables.set(\"orderId\", pm.response.json().orderId);",
+              "pm.test(\"total is 1800.00\", () => pm.expect(pm.response.json().total).to.eql(1800));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Idempotency-Key",
+            "value": "{{idemKey}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/cart/confirm",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "cart",
+            "confirm"
+          ]
+        },
+        "description": "Generates a fresh Idempotency-Key each time you run it, and saves the orderId.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"items\": [{\"productId\": \"{{laptopId}}\", \"qty\": 3}],\n  \"customerSegment\": \"REGULAR\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "8. Repeat the same confirm (replay)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"201 Created\", () => pm.response.to.have.status(201));",
+              "pm.test(\"is a replay\", () => pm.expect(pm.response.headers.get(\"Idempotent-Replayed\")).to.eql(\"true\"));",
+              "pm.test(\"same orderId as request 7\", () => pm.expect(pm.response.json().orderId).to.eql(pm.collectionVariables.get(\"orderId\")));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Idempotency-Key",
+            "value": "{{idemKey}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/cart/confirm",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "cart",
+            "confirm"
+          ]
+        },
+        "description": "Same key and same cart: returns the original order and does NOT take stock again.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"items\": [{\"productId\": \"{{laptopId}}\", \"qty\": 3}],\n  \"customerSegment\": \"REGULAR\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "9. Check laptop stock (should be 7)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"stock reserved once: 10 - 3 = 7\", () => pm.expect(pm.response.json().stock).to.eql(7));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/products/{{laptopId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "products",
+            "{{laptopId}}"
+          ]
+        },
+        "description": ""
+      }
+    },
+    {
+      "name": "10. Reuse key with a different cart (422)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"422\", () => pm.response.to.have.status(422));",
+              "pm.test(\"code IDEMPOTENCY_KEY_REUSED\", () => pm.expect(pm.response.json().code).to.eql(\"IDEMPOTENCY_KEY_REUSED\"));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Idempotency-Key",
+            "value": "{{idemKey}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/cart/confirm",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "cart",
+            "confirm"
+          ]
+        },
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"items\": [{\"productId\": \"{{laptopId}}\", \"qty\": 1}]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "11. Out of stock (409)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"409\", () => pm.response.to.have.status(409));",
+              "pm.test(\"code OUT_OF_STOCK with shortages\", () => {",
+              "  const b = pm.response.json();",
+              "  pm.expect(b.code).to.eql(\"OUT_OF_STOCK\");",
+              "  pm.expect(b.shortages[0].available).to.eql(5);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/cart/confirm",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "cart",
+            "confirm"
+          ]
+        },
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"items\": [{\"productId\": \"{{novelId}}\", \"qty\": 6}]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "12. Validation error (400)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"400\", () => pm.response.to.have.status(400));",
+              "pm.test(\"points at items[0].qty\", () => pm.expect(pm.response.json().errors[0].field).to.eql(\"items[0].qty\"));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/cart/quote",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "cart",
+            "quote"
+          ]
+        },
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"items\": [{\"productId\": \"{{novelId}}\", \"qty\": 0}]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "13. Unknown product (422)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"422 UNKNOWN_PRODUCT\", () => { pm.response.to.have.status(422); pm.expect(pm.response.json().code).to.eql(\"UNKNOWN_PRODUCT\"); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/cart/quote",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "cart",
+            "quote"
+          ]
+        },
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"items\": [{\"productId\": \"00000000-0000-0000-0000-000000000000\", \"qty\": 1}]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "laptopId",
+      "value": ""
+    },
+    {
+      "key": "mouseId",
+      "value": ""
+    },
+    {
+      "key": "novelId",
+      "value": ""
+    },
+    {
+      "key": "idemKey",
+      "value": ""
+    },
+    {
+      "key": "orderId",
+      "value": ""
+    }
+  ]
+}

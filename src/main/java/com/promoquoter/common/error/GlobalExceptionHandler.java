@@ -1,6 +1,7 @@
 package com.promoquoter.common.error;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.exc.InputCoercionException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.databind.exc.InvalidTypeIdException;
@@ -28,6 +29,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -124,16 +126,28 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     private static String describe(Throwable cause) {
-        return switch (cause) {
-            case InvalidTypeIdException e -> e.getTypeId() == null
+        if (cause instanceof JsonMappingException e && e.getCause() instanceof InputCoercionException) {
+            return "Number out of range" + at(e) + ".";
+        }
+        // Most specific Jackson exception types first: they all extend MismatchedInputException.
+        if (cause instanceof InvalidTypeIdException e) {
+            return e.getTypeId() == null
                     ? "Missing 'type' property" + at(e) + "."
                     : "Unknown type '" + e.getTypeId() + "'" + at(e) + ".";
-            case UnrecognizedPropertyException e -> "Unknown property '" + e.getPropertyName() + "'" + at(e) + ".";
-            case InvalidFormatException e -> "Invalid value '" + e.getValue() + "'" + at(e) + allowedValues(e) + ".";
-            case MismatchedInputException e -> "Unexpected value" + at(e) + ".";
-            case JsonProcessingException e -> "Request body is not valid JSON.";
-            case null, default -> "Request body is missing or unreadable.";
-        };
+        }
+        if (cause instanceof UnrecognizedPropertyException e) {
+            return "Unknown property '" + e.getPropertyName() + "'" + at(e) + ".";
+        }
+        if (cause instanceof InvalidFormatException e) {
+            return "Invalid value '" + e.getValue() + "'" + at(e) + allowedValues(e) + ".";
+        }
+        if (cause instanceof MismatchedInputException e) {
+            return "Unexpected value" + at(e) + ".";
+        }
+        if (cause instanceof JsonProcessingException) {
+            return "Request body is not valid JSON.";
+        }
+        return "Request body is missing or unreadable.";
     }
 
     private static String at(JsonMappingException e) {
@@ -152,6 +166,32 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             return "; expected one of " + Arrays.toString(target.getEnumConstants());
         }
         return "";
+    }
+
+    /** Unknown URL: say which endpoint was not found rather than Spring's "No static resource" wording. */
+    @Override
+    protected ResponseEntity<Object> handleNoResourceFoundException(
+            NoResourceFoundException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND,
+                "No endpoint " + ex.getHttpMethod() + " /" + ex.getResourcePath() + ".");
+        problem.setTitle("Not found");
+        return handleExceptionInternal(ex, problem, headers, HttpStatus.NOT_FOUND, request);
+    }
+
+    /**
+     * Every problem response carries a {@code code}. Framework errors handled by the base class
+     * (405, 406, 415, ...) get one derived from their status, for example {@code METHOD_NOT_ALLOWED}.
+     */
+    @Override
+    protected ResponseEntity<Object> handleExceptionInternal(
+            Exception ex, Object body, HttpHeaders headers, HttpStatusCode statusCode, WebRequest request) {
+        ResponseEntity<Object> response = super.handleExceptionInternal(ex, body, headers, statusCode, request);
+        if (response != null && response.getBody() instanceof ProblemDetail problem
+                && (problem.getProperties() == null || !problem.getProperties().containsKey("code"))) {
+            HttpStatus status = HttpStatus.resolve(statusCode.value());
+            problem.setProperty("code", status != null ? status.name() : "HTTP_" + statusCode.value());
+        }
+        return response;
     }
 
     private ResponseEntity<Object> validationProblem(

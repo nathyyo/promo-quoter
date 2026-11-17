@@ -18,8 +18,8 @@ public class OutOfStockException extends ApiException {
     public OutOfStockException(List<Shortage> shortages) {
         super(HttpStatus.CONFLICT, "OUT_OF_STOCK", "Insufficient stock",
                 shortages.size() == 1
-                        ? "Not enough stock for '" + shortages.getFirst().name() + "': requested "
-                          + shortages.getFirst().requested() + ", available " + shortages.getFirst().available() + "."
+                        ? "Not enough stock for '" + shortages.get(0).name() + "': requested "
+                          + shortages.get(0).requested() + ", available " + shortages.get(0).available() + "."
                         : "Not enough stock for " + shortages.size() + " products.");
         this.shortages = List.copyOf(shortages);
     }

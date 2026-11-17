@@ -203,6 +203,13 @@ class CartQuoteApiIT extends IntegrationTest {
     }
 
     @Test
+    void reportsNumbersThatAreOutOfRange() throws Exception {
+        postJson("/cart/quote", "{\"items\":[{\"productId\":\"%s\",\"qty\":99999999999}]}".formatted(novel.getId()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("Number out of range at 'items[0].qty'."));
+    }
+
+    @Test
     void rejectsAMissingBody() throws Exception {
         postJson("/cart/quote", "")
                 .andExpect(status().isBadRequest())

@@ -21,7 +21,7 @@ class PricingContextTest {
 
     @Test
     void lineSubtotalIsUnitPriceTimesQuantity() {
-        LineItem line = context(item("Pen", "MISC", "1.25", 3)).lines().getFirst();
+        LineItem line = context(item("Pen", "MISC", "1.25", 3)).lines().get(0);
 
         assertThat(line.subtotal()).isEqualTo(money("3.75"));
         assertThat(line.total()).isEqualTo(money("3.75"));
@@ -29,7 +29,7 @@ class PricingContextTest {
 
     @Test
     void discountsAreRoundedAndRecordedOnTheLine() {
-        LineItem line = context(item("Pen", "MISC", "10.00", 1)).lines().getFirst();
+        LineItem line = context(item("Pen", "MISC", "10.00", 1)).lines().get(0);
 
         BigDecimal applied = line.applyDiscount(rule, money("1.005"));
 
@@ -40,7 +40,7 @@ class PricingContextTest {
 
     @Test
     void aDiscountCanNeverMakeALineNegative() {
-        LineItem line = context(item("Pen", "MISC", "5.00", 1)).lines().getFirst();
+        LineItem line = context(item("Pen", "MISC", "5.00", 1)).lines().get(0);
 
         assertThat(line.applyDiscount(rule, money("7.00"))).isEqualTo(money("5.00"));
         assertThat(line.applyDiscount(rule, money("1.00"))).isEqualTo(money("0.00"));
@@ -50,7 +50,7 @@ class PricingContextTest {
 
     @Test
     void zeroDiscountsAreNotRecorded() {
-        LineItem line = context(item("Pen", "MISC", "5.00", 1)).lines().getFirst();
+        LineItem line = context(item("Pen", "MISC", "5.00", 1)).lines().get(0);
 
         line.applyDiscount(rule, money("0.004"));
 
@@ -59,7 +59,7 @@ class PricingContextTest {
 
     @Test
     void rejectsNegativeDiscounts() {
-        LineItem line = context(item("Pen", "MISC", "5.00", 1)).lines().getFirst();
+        LineItem line = context(item("Pen", "MISC", "5.00", 1)).lines().get(0);
 
         assertThatThrownBy(() -> line.applyDiscount(rule, money("-1.00")))
                 .isInstanceOf(IllegalArgumentException.class);
