@@ -16,7 +16,7 @@ by reserving stock atomically, safely under concurrent and repeated requests.
 
 ## Quick start
 
-Requires **JDK 21** (the current LTS; the brief asks for 17+). Maven is not required; the wrapper downloads it.
+Requires **JDK 17 or newer** (CI builds on 17 and 21). Maven is not required; the wrapper downloads it.
 
 ```bash
 ./mvnw spring-boot:run        # or: mvn spring-boot:run
@@ -32,17 +32,21 @@ open target/site/jacoco/index.html
 
 | | |
 |---|---|
-| Language | Java 21 (LTS) |
+| Language | Java 17+ (built and tested on 17 and 21) |
 | Framework | Spring Boot 3.5 (Web, Data JPA, Validation) |
 | Database | H2, in memory |
 | Tests | JUnit 5, AssertJ, MockMvc, TestRestTemplate |
 | Coverage | JaCoCo, build fails below 90% lines / 85% branches |
-| CI | GitHub Actions runs `./mvnw verify` on every push and pull request |
+| CI | GitHub Actions runs `./mvnw verify` on Java 17 and 21 for every push and pull request |
 
 ## API walkthrough
 
-The commands below are copy-paste ready (they use `jq` to capture ids). The responses shown are from a
+The commands below are copy-paste ready (they use [`jq`](https://jqlang.org) to capture ids). The responses shown are from a
 real run, shortened where marked.
+
+**Prefer Postman?** Import [`docs/postman/PromoQuoter.postman_collection.json`](docs/postman/PromoQuoter.postman_collection.json)
+and use *Run collection*. Its 13 requests follow this walkthrough, pass ids between requests automatically
+and check every response.
 
 ### 1. Create products
 
@@ -229,6 +233,7 @@ curl -s -X POST localhost:8080/cart/quote -H 'Content-Type: application/json' \
 |---|---|---|
 | 400 | `VALIDATION_FAILED` | Bean Validation failed; `errors` lists each `field` and `message` |
 | 400 | `MALFORMED_REQUEST` | Invalid JSON, unknown property, wrong value type, unknown `type` or enum value |
+| 4xx | HTTP status name | Other request problems raised by Spring MVC use the HTTP status name as `code` (`NOT_FOUND`, `METHOD_NOT_ALLOWED`, `UNSUPPORTED_MEDIA_TYPE`, ...) |
 | 404 | `RESOURCE_NOT_FOUND` | `GET /products/{id}` with an unknown id |
 | 409 | `OUT_OF_STOCK` | Confirm would oversell; `shortages` lists every short product |
 | 409 | `CONCURRENT_UPDATE` | A row lock timed out or a version check failed; safe to retry |
@@ -342,7 +347,7 @@ Decisions I made where the brief left room:
 | Integration | `*IT` | Failsafe, full app and H2 | Every endpoint through MockMvc, including validation and error bodies |
 | Concurrency | `CartConfirmConcurrencyIT` | Real HTTP on a random port | 25 buyers for 5 units sell exactly 5; opposite-order carts do not deadlock; 10 retries with one key place one order |
 
-142 tests; coverage is about 96% of lines and 90% of branches. The build fails if coverage drops below 90% of
+146 tests; coverage is about 96% of lines and 90% of branches. The build fails if coverage drops below 90% of
 lines or 85% of branches. The concurrency tests were checked by removing the row lock, and both
 stock tests then fail.
 

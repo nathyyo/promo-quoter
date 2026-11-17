@@ -52,7 +52,7 @@ class PercentOffCategoryRuleTest {
 
         rule.apply(context);
 
-        assertThat(context.lines().getFirst().discounts().getFirst().amount()).isEqualTo(money("0.02"));
+        assertThat(context.lines().get(0).discounts().get(0).amount()).isEqualTo(money("0.02"));
         assertThat(context.currentTotal()).isEqualTo(money("0.13"));
     }
 

@@ -31,19 +31,20 @@ public record PromotionResponse(
 
     static PromotionResponse from(Promotion promotion) {
         Set<CustomerSegment> segments = new TreeSet<>(promotion.getCustomerSegments());
-        return switch (promotion) {
-            case PercentOffCategoryPromotion p -> new PromotionResponse(
-                    p.getId(), p.getType(), p.getName(), segments,
+        if (promotion instanceof PercentOffCategoryPromotion p) {
+            return new PromotionResponse(p.getId(), p.getType(), p.getName(), segments,
                     p.getCategory(), p.getPercent(), null, null, null, null, p.getCreatedAt());
-            case TieredBulkDiscountPromotion p -> new PromotionResponse(
-                    p.getId(), p.getType(), p.getName(), segments,
+        }
+        if (promotion instanceof TieredBulkDiscountPromotion p) {
+            return new PromotionResponse(p.getId(), p.getType(), p.getName(), segments,
                     null, null, p.getProductId(), null, null,
                     p.getTiers().stream().map(t -> new Tier(t.getMinQuantity(), t.getPercent())).toList(),
                     p.getCreatedAt());
-            case BuyXGetYPromotion p -> new PromotionResponse(
-                    p.getId(), p.getType(), p.getName(), segments,
+        }
+        if (promotion instanceof BuyXGetYPromotion p) {
+            return new PromotionResponse(p.getId(), p.getType(), p.getName(), segments,
                     null, null, p.getProductId(), p.getBuyQuantity(), p.getFreeQuantity(), null, p.getCreatedAt());
-            default -> throw new IllegalArgumentException("Unsupported promotion: " + promotion.getClass().getName());
-        };
+        }
+        throw new IllegalArgumentException("Unsupported promotion: " + promotion.getClass().getName());
     }
 }

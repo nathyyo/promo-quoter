@@ -59,7 +59,7 @@ Status: ✅ done · 🚧 in progress · ⬜ not started
 
 | # | Requirement | Status | Implementation | Tests |
 |---|---|---|---|---|
-| N1 | Java 17+ | ✅ | Java 21 LTS (`pom.xml`) | CI |
+| N1 | Java 17+ | ✅ | `java.version` 17 in `pom.xml` | CI matrix builds on Java 17 and 21 |
 | N2 | Spring Boot 3.x | ✅ | 3.5.16 (`pom.xml`) | CI |
 | N3 | Spring Web, Spring Data JPA, Validation, H2 runtime | ✅ | `pom.xml` | |
 | N4 | Lean dependencies, no UI | ✅ | `pom.xml` | |
@@ -70,6 +70,6 @@ Status: ✅ done · 🚧 in progress · ⬜ not started
 |---|---|---|---|
 | X1 | Runnable via `mvn spring-boot:run` | ✅ | `./mvnw spring-boot:run` or `mvn spring-boot:run` |
 | X2 | Core endpoints implemented and tested | ✅ | `*ApiIT` integration tests for every endpoint |
-| X3 | Comprehensive unit and integration tests | ✅ | 81 unit tests (`*Test`), 61 integration tests (`*IT`) incl. real-HTTP concurrency |
+| X3 | Comprehensive unit and integration tests | ✅ | 81 unit tests (`*Test`), 65 integration tests (`*IT`) incl. real-HTTP concurrency |
 | X4 | Code coverage | ✅ | JaCoCo report at `target/site/jacoco`; build fails below 90% lines / 85% branches |
-| X5 | README: assumptions, how to run, sample curl | ✅ | `README.md` |
+| X5 | README: assumptions, how to run, sample curl | ✅ | `README.md`; Postman collection in `docs/postman` |

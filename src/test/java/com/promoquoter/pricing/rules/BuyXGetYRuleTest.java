@@ -44,7 +44,7 @@ class BuyXGetYRuleTest {
         rule(laptop.productId(), 2, 1).apply(context);
 
         assertThat(context.currentTotal()).isEqualTo(money("400.00"));
-        assertThat(context.lines().getFirst().discounts()).singleElement()
+        assertThat(context.lines().get(0).discounts()).singleElement()
                 .satisfies(discount -> assertThat(discount.amount()).isEqualTo(money("200.00")));
     }
 
@@ -81,7 +81,7 @@ class BuyXGetYRuleTest {
         rule(laptop.productId(), 2, 1).apply(context);
 
         assertThat(context.currentTotal()).isEqualTo(money("200.00"));
-        assertThat(context.lines().getFirst().discounts()).isEmpty();
+        assertThat(context.lines().get(0).discounts()).isEmpty();
     }
 
     @Test

@@ -48,7 +48,7 @@ class TieredBulkDiscountRuleTest {
 
         rule(pen.productId()).apply(context);
 
-        assertThat(context.lines().getFirst().discounts()).hasSize(1);
+        assertThat(context.lines().get(0).discounts()).hasSize(1);
     }
 
     @Test
